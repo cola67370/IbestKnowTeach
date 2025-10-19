@@ -1,0 +1,31 @@
+name: semgrep perf checks
+
+on:
+  pull_request:
+    paths:
+      - '**/*.ts'
+      - '**/*.tsx'
+      - '**/*.ark.ts'
+      - 'semgrep/**'
+  push:
+    branches: [ main ]
+
+jobs:
+  semgrep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install semgrep
+        run: |
+          python3 -m pip install --upgrade pip
+          pip3 install semgrep
+      - name: Run semgrep perf rules (JSON output)
+        run: |
+          semgrep --config semgrep/perf-antipatterns-arkts.yml --exclude node_modules --output semgrep-report.json --json
+      - name: Upload semgrep report
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-report
+          path: semgrep-report.json
