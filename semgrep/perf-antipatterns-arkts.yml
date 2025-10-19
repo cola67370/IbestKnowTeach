@@ -1,0 +1,87 @@
+rules:
+  - id: ts-fn-in-loop
+    patterns:
+      - pattern: |
+          for (...) {
+            function $F(...) { ... }
+          }
+      - pattern: |
+          for (...) {
+            const $F = function(...) { ... }
+          }
+      - pattern: |
+          for (...) {
+            const $F = (...) => ...
+          }
+    message: "在循环体中声明函数（或在循环中每次创建闭包/函数）会导致频繁分配和闭包捕获，考虑将函数移动到循环外或重构。"
+    languages: [javascript, typescript]
+    severity: WARNING
+
+  - id: ts-new-in-loop
+    pattern: |
+      for (...) {
+        new $C(...);
+      }
+    message: "在循环内部反复 new 出对象（或组件）可能带来大量分配，考虑复用实例或移动创建逻辑。"
+    languages: [javascript, typescript]
+    severity: WARNING
+
+  - id: ts-create-dom-in-loop
+    pattern: |
+      for (...) {
+        document.createElement($X)
+      }
+    message: "循环内频繁创建 DOM 元素，考虑批量创建后再一次��插入或使用虚拟化/复用机制。"
+    languages: [javascript, typescript]
+    severity: WARNING
+
+  - id: ts-access-layout-in-loop
+    patterns:
+      - pattern: |
+          for (...) {
+            $EL.offsetWidth
+          }
+      - pattern: |
+          for (...) {
+            $EL.getBoundingClientRect()
+          }
+    message: "循环中读取 layout/重排触发属性（offsetWidth/height/getBoundingClientRect），会产生强制同步布局（reflow），应缓存或减少频繁读取。"
+    languages: [javascript, typescript]
+    severity: WARNING
+
+  - id: ts-setinterval-zero
+    pattern-either:
+      - pattern: |
+          setInterval($F, 0)
+      - pattern: |
+          setTimeout($F, 0)
+    message: "短定时器(0) 或频繁的定时器用于重工作负载会占用主线程，建议合并、退避或使用 requestAnimationFrame（渲染相关）或节流。"
+    languages: [javascript, typescript]
+    severity: WARNING
+
+  - id: ts-empty-catch
+    pattern: |
+      try {
+        ...
+      } catch ($E) { }
+    message: "catch 为空（吞掉异常），这会隐藏错误并使得后续恢复/重试/回收无法进行；至少记录或重新抛出异常。"
+    languages: [javascript, typescript]
+    severity: WARNING
+
+  - id: ts-sync-api-usage
+    patterns:
+      - pattern: "fs.readFileSync(...)"
+      - pattern: "fs.writeFileSync(...)"
+      - pattern: "child_process.execSync(...)"
+    message: "检测到同步 IO/阻塞 API 的使用；这会阻塞事件循环，应改为异步接口或把阻塞操作放到后台线程。"
+    languages: [javascript, typescript]
+    severity: WARNING
+
+  - id: ts-dom-style-in-loop
+    pattern: |
+      for (...) {
+        $EL.style.$P = $VAL
+      }
+    message: "循环中对 DOM style 逐项赋值可能触发多次重绘，考虑合并样式修改或修改 class。"
+    languages: [javascript, typescript]
+    severity: WARNING
